@@ -1,8 +1,6 @@
-
 const express = require('express');
 const bodyParser = require('body-parser');
-const axios = require('axios');
-require('dotenv').config();
+const fetch = require('node-fetch');
 
 const app = express();
 app.use(bodyParser.json());
@@ -15,26 +13,34 @@ const facilities = [
 
 app.post('/nearest-facility', async (req, res) => {
     const { zipcode } = req.body;
-    const geocodeResponse = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${zipcode}&key=${process.env.GOOGLE_API_KEY}`);
-    const userLocation = geocodeResponse.data.results[0].geometry.location;
 
+    // Geocode the user's zip code to get latitude and longitude
+    const geocodeResponse = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${zipcode}&key=${process.env.GOOGLE_MAPS_API_KEY}`);
+    const geocodeData = await geocodeResponse.json();
+    const userLocation = geocodeData.results[0].geometry.location;
+    
+    const destinations = facilities.map(facility => `${facility.lat},${facility.lng}`).join('|');
+
+    // Use Distance Matrix API to calculate distances
+    const distanceMatrixResponse = await fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?origins=${userLocation.lat},${userLocation.lng}&destinations=${destinations}&key=${process.env.GOOGLE_MAPS_API_KEY}`);
+    const distanceMatrixData = await distanceMatrixResponse.json();
+    
     let nearestFacility = null;
     let shortestDistance = Infinity;
 
-    for (const facility of facilities) {
-        const distanceResponse = await axios.get(`https://maps.googleapis.com/maps/api/distancematrix/json?origins=${userLocation.lat},${userLocation.lng}&destinations=${facility.lat},${facility.lng}&key=${process.env.GOOGLE_API_KEY}`);
-        const distance = distanceResponse.data.rows[0].elements[0].distance.value; // distance in meters
-
-        if (distance < shortestDistance) {
-            shortestDistance = distance;
-            nearestFacility = facility.name;
+    distanceMatrixData.rows[0].elements.forEach((element, index) => {
+        if (element.status === 'OK' && element.distance.value < shortestDistance) {
+            shortestDistance = element.distance.value;
+            nearestFacility = facilities[index].name;
         }
-    }
+    });
 
-    const distanceInMiles = (shortestDistance / 1609.34).toFixed(2); // convert meters to miles
+    const distanceInMiles = (shortestDistance / 1609.34).toFixed(2); // Convert meters to miles
+
     res.json({ facility: nearestFacility, distance: distanceInMiles });
 });
 
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
