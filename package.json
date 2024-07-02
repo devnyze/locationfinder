@@ -1,0 +1,18 @@
+
+{
+  "name": "locationfinder",
+  "version": "1.0.0",
+  "description": "A web app to find the nearest facility based on zip code",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "body-parser": "^1.19.0",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1"
+  },
+  "author": "",
+  "license": "ISC"
+}
