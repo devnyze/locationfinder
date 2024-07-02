@@ -72,7 +72,7 @@
         document.getElementById('zipcodeForm').addEventListener('submit', async function(event) {
             event.preventDefault();
             const zipcode = document.getElementById('zipcode').value;
-            const response = await fetch('http://your-lightsail-instance-ip:3000/nearest-facility', {
+            const response = await fetch('http://54.156.88.118:3000/nearest-facility', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
